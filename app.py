@@ -57,7 +57,7 @@ class Handler(BaseHTTPRequestHandler):
     r=c.execute('SELECT * FROM events WHERE id=? AND active=1',(p.split('/')[-1],)).fetchone()
     if not r:return self.send(layout('رویداد پیدا نشد',''),404)
     slots=c.execute('SELECT s.*, COALESCE(SUM(b.quantity),0) used FROM slots s LEFT JOIN bookings b ON b.slot_id=s.id WHERE s.event_id=? GROUP BY s.id ORDER BY s.date,s.start',(r['id'],)).fetchall(); options=''.join(f'<option value="{s["id"]}" {"disabled" if s["used"]>=s["capacity"] else ""}>{E(s["date"])} | {E(s["start"])} تا {E(s["end"])} | ظرفیت باقی‌مانده: {s["capacity"]-s["used"]}</option>' for s in slots)
-    return self.send(page(r['title'],f'''<main class="inner"><div class="event-hero" style="--theme:{E(r['theme'])}"><div class="eyebrow light">رویداد مجموعه / ثبت‌نام رایگان</div><h1>{E(r['title'])}</h1><p>{E(r['description'])}</p><p>⌖ {E(r['location'])}</p></div><div class="booking"><div><div class="eyebrow">همراه ما باشید</div><h2>ثبت‌نام در رویداد</h2><p>بازه حضور و تعداد بلیت را انتخاب کنید. برای نهایی شدن رزرو، شماره همراه شما تأیید می‌شود.</p></div><form action="/otp" method="post" class="form"><input type="hidden" name="event_id" value="{r['id']}"><label>بازه حضور<select name="slot" required>{options}</select></label><label>نام و نام خانوادگی<input name="name" required maxlength="100"></label><label>شماره همراه<input name="phone" required inputmode="tel" placeholder="۰۹۱۲..." dir="ltr"></label><label>تعداد بلیت<input name="quantity" type="number" min="1" max="10" value="1" required></label><button class="btn dark" {"disabled" if not slots else ""}>دریافت کد تأیید ←</button></form></div></main>'''))
+    return self.send(page(r['title'],f'''<main class="inner"><div class="event-hero" style="--theme:{E(r['theme'])}"><div class="eyebrow light">رویداد مجموعه / ثبت‌نام رایگان</div><h1>{E(r['title'])}</h1><p>{E(r['description'])}</p><p>⌖ {E(r['location'])}</p></div><div class="booking"><div><div class="eyebrow">همراه ما باشید</div><h2>ثبت‌نام در رویداد</h2><p>بازه حضور و تعداد بلیت را انتخاب کنید. اطلاعات خود را وارد کنید تا رزرو ثبت شود.</p></div><form action="/book-direct" method="post" class="form"><input type="hidden" name="event_id" value="{r['id']}"><label>بازه حضور<select name="slot" required>{options}</select></label><label>نام و نام خانوادگی<input name="name" required maxlength="100"></label><label>شماره همراه<input name="phone" required inputmode="tel" placeholder="۰۹۱۲..." dir="ltr"></label><label>تعداد بلیت<input name="quantity" type="number" min="1" max="10" value="1" required></label><button class="btn dark" {"disabled" if not slots else ""}>ثبت رزرو ←</button></form></div></main>'''))
    if p=='/admin':
     if not self.auth():return self.send(layout('ورود مدیریت','<form method="post" action="/login" class="form narrow"><label>رمز مدیریت<input type="password" name="password" required></label><button class="btn dark">ورود</button></form>'))
     posts=c.execute('SELECT * FROM posts ORDER BY id DESC').fetchall(); events=c.execute('SELECT * FROM events ORDER BY id DESC').fetchall(); bookings=c.execute('SELECT b.*,e.title,s.date,s.start FROM bookings b JOIN slots s ON s.id=b.slot_id JOIN events e ON e.id=s.event_id ORDER BY b.id DESC LIMIT 100').fetchall()
@@ -80,6 +80,17 @@ class Handler(BaseHTTPRequestHandler):
      elif p=='/admin/toggle':c.execute('UPDATE events SET active=1-active WHERE id=?',(f['id'],))
     return self.redirect('/admin')
    except (ValueError,KeyError,sqlite3.Error):return self.send(layout('خطا','<p>اطلاعات واردشده معتبر نیست.</p><a href="/admin">بازگشت</a>'),400)
+  if p=='/book-direct':
+   try:
+    phone=f.get('phone','').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789')).replace(' ','').replace('-',''); name=f.get('name','').strip(); slot=int(f['slot']); event=int(f['event_id']); quantity=int(f['quantity'])
+    if len(phone)!=11 or not phone.startswith('09') or not phone.isdigit() or not name or len(name)>100 or not 1<=quantity<=10: raise ValueError()
+    with db() as c:
+     c.execute('BEGIN IMMEDIATE')
+     s=c.execute('SELECT s.capacity,COALESCE(SUM(b.quantity),0) used FROM slots s JOIN events e ON e.id=s.event_id LEFT JOIN bookings b ON b.slot_id=s.id WHERE s.id=? AND e.id=? AND e.active=1 GROUP BY s.id',(slot,event)).fetchone()
+     if not s or s['capacity']-s['used']<quantity:return self.send(layout('ظرفیت کافی نیست','لطفاً بازه دیگری انتخاب کنید.'),409)
+     ref=secrets.token_hex(4).upper(); c.execute('INSERT INTO bookings(slot_id,name,phone,quantity,code,created) VALUES(?,?,?,?,?,?)',(slot,name,phone,quantity,ref,int(time.time()))); c.commit()
+    return self.send(layout('ثبت‌نام انجام شد',f'<div class="success"><p>کد پیگیری خود را نگه دارید.</p><strong dir="ltr">{ref}</strong><p>تعداد بلیت: {quantity}</p><a href="/events">بازگشت به رویدادها</a></div>'))
+   except (KeyError,ValueError,sqlite3.Error):return self.send(layout('خطا','اطلاعات ثبت‌نام معتبر نیست.'),400)
   if p=='/otp':
    phone=f.get('phone','').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789')).replace(' ','').replace('-',''); name=f.get('name','').strip()
    try: slot=int(f['slot']); quantity=int(f['quantity']); event=int(f['event_id'])
