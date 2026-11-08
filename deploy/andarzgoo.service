@@ -1,0 +1,20 @@
+[Unit]
+Description=Andarzgoo website
+After=network.target
+[Service]
+Type=simple
+User=andarzgoo
+Group=andarzgoo
+WorkingDirectory=/opt/andarzgoo
+Environment=NODE_ENV=production
+Environment=DB_PATH=/var/lib/andarzgoo/site.sqlite
+EnvironmentFile=/etc/andarzgoo.env
+ExecStart=/usr/bin/node /opt/andarzgoo/server.mjs
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/andarzgoo
+[Install]
+WantedBy=multi-user.target
