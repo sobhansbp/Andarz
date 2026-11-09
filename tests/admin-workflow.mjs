@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFile} from 'node:fs/promises';
 import {gregorianDate,jalaliDate} from '../admin-ui.mjs';
+import {parseConditions,getConditions,conditionEditorScript} from '../conditions.mjs';
 import {calendarEnhancement} from '../jalali-calendar.mjs';
 const {default:worker}=await import(process.env.WORKER_FILE||'../worker.js');
 assert.equal(gregorianDate('۱۴۰۵/۰۹/۱۰'),'2026-12-01');
@@ -12,8 +13,11 @@ assert.equal(gregorianDate('2026/12/01'),null);
 assert.equal(jalaliDate('2026-12-01'),'1405/09/10');
 for(let y=1398;y<1410;y++)for(let m=1;m<=12;m++){let s=`${y}/${String(m).padStart(2,'0')}/01`;assert.equal(jalaliDate(gregorianDate(s)),s)}
 new Function(calendarEnhancement.slice(8,-9));
+new Function(conditionEditorScript.slice(8,-9));
+const parsed=parseConditions('لطفاً به موارد زیر توجه داشته باشید:\r\n\r\n۱- زمان: آبان\r\n\r\n۲- شرط دوم\r\nادامه همان شرط\r\n\r\nتذکر: نکته پایانی');assert.deepEqual(parsed,{intro:'لطفاً به موارد زیر توجه داشته باشید:',items:['زمان: آبان','شرط دوم\nادامه همان شرط','تذکر: نکته پایانی']});
+assert.equal(getConditions({terms:'شرط قدیمی'}).items[0],'شرط قدیمی');
 const q=new DatabaseSync(':memory:');q.exec(`PRAGMA foreign_keys=ON;
-CREATE TABLE events(id INTEGER PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL,location TEXT NOT NULL,color TEXT NOT NULL,active INTEGER DEFAULT 1,image_url TEXT DEFAULT '',theme TEXT DEFAULT 'default',terms TEXT DEFAULT '');
+CREATE TABLE events(id INTEGER PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL,location TEXT NOT NULL,color TEXT NOT NULL,active INTEGER DEFAULT 1,image_url TEXT DEFAULT '',theme TEXT DEFAULT 'default',terms TEXT DEFAULT '',terms_json TEXT DEFAULT '');
 CREATE TABLE slots(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),date TEXT,start TEXT,end TEXT,capacity INTEGER,active INTEGER DEFAULT 1);
 CREATE TABLE bookings(id INTEGER PRIMARY KEY,slot_id INTEGER REFERENCES slots(id),name TEXT,phone TEXT,quantity INTEGER,code TEXT UNIQUE,created TEXT DEFAULT CURRENT_TIMESTAMP,status TEXT DEFAULT 'active',checked_in_at TEXT);
 CREATE TABLE event_fields(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),label TEXT,required INTEGER,kind TEXT DEFAULT 'text',options TEXT DEFAULT '',enabled INTEGER DEFAULT 1);
@@ -61,6 +65,12 @@ await post('/admin/checkin',{code:active.code});assert.equal(q.prepare('SELECT c
 await post('/admin/cancel',{id:active.id});assert.equal(q.prepare('SELECT status FROM bookings WHERE id=?').get(active.id).status,'active');
 await post('/admin/toggle-field',{id:'1'});let disabledPage=await (await get('/event/1')).text();assert(!disabledPage.includes('name="field_1"'));assert.equal(q.prepare('SELECT COUNT(*) n FROM booking_answers').get().n,2);
 await post('/admin/event',{},404);
+// Structured conditions preserve independent paragraphs and their explicit order.
+let conditions=new URLSearchParams([['conditions_intro','مقدمه'],['condition','زمان بازدید'],['condition','تذکر: لباس مناسب']]);
+await post('/admin/save-conditions',conditions);let savedConditions=JSON.parse(q.prepare('SELECT terms_json FROM events WHERE id=1').get().terms_json);assert.deepEqual(savedConditions,{intro:'مقدمه',items:['زمان بازدید','تذکر: لباس مناسب']});
+let conditionsPage=await (await get('/conditions/1')).text();assert.equal((conditionsPage.match(/class="condition-item"/g)||[]).length,2);assert(conditionsPage.includes('تذکر: لباس مناسب'));
+let adminPage=await (await get('/admin?step=conditions')).text();assert(adminPage.includes('condition-editor-list'));assert(adminPage.includes('زمان بازدید'));
+await post('/admin/save-conditions',new URLSearchParams([['conditions_intro','بدون شرایط']]),400);assert.equal(JSON.parse(q.prepare('SELECT terms_json FROM events WHERE id=1').get().terms_json).items.length,2);
 // Single-exhibition boundary: historic exhibitions remain stored but cannot be publicly reserved.
 q.exec("INSERT INTO events(id,title,description,location,color,active,theme) VALUES(99,'Historic','','Old','#224b3d',1,'fatemieh')");assert.equal((await get('/event/99')).status,404);assert.equal(q.prepare('SELECT COUNT(*) n FROM events').get().n,2);
 console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, capacity, fields, search, CSV, cancellation and check-in');
