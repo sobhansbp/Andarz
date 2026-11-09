@@ -67,9 +67,9 @@ body:has(.terms) .terms{background:transparent;border:0;box-shadow:none;backdrop
 body:has(.terms) .terms>h2{margin-bottom:22px}
 body:has(.terms) .conditions-intro{color:var(--visitor-gold);font-size:16px;line-height:2;margin-bottom:25px}
 .conditions-list{list-style:none;display:grid;gap:16px;margin:0;padding:0;counter-reset:none}
-.condition-item{display:flex;align-items:center;gap:20px;padding:24px;background:var(--visitor-surface);border:1px solid var(--visitor-line);border-radius:20px;backdrop-filter:blur(8px);min-width:0}
-body:has(.terms) .condition-item p{margin:0;color:var(--visitor-text);white-space:pre-wrap;line-height:2.2;font-size:15px;overflow-wrap:anywhere}
-.condition-number{display:grid;place-items:center;flex:0 0 44px;min-height:46px;border:1px solid #a18a53;background:#65533135;border-radius:12px;color:#ead4a0;font-weight:700;font-size:17px}
+.condition-item{display:flex;align-items:center;gap:20px;padding:24px;background:linear-gradient(110deg,rgba(53,61,35,.88),rgba(34,45,29,.93));border:1px solid rgba(188,159,91,.65);border-radius:20px;backdrop-filter:blur(8px);box-shadow:inset 0 1px 0 rgba(224,203,149,.08),0 7px 20px #0002;min-width:0}
+body:has(.terms) .condition-item p{margin:0;color:#f0e7d0;white-space:pre-wrap;line-height:2.2;font-size:15px;overflow-wrap:anywhere}
+.condition-number{display:grid;place-items:center;flex:0 0 44px;min-height:46px;border:1px solid #ab8b4e;background:linear-gradient(140deg,#96763d,#6d542e);border-radius:12px;color:#fff0cb;box-shadow:inset 0 1px 0 #e2c98a33,0 2px 5px #0003;font-weight:700;font-size:17px}
 .conditions-confirm{margin-top:24px;background:var(--visitor-surface);padding:22px 26px;border:1px solid var(--visitor-line);border-radius:18px}
 body:has(.terms) .conditions-confirm label{margin-top:0;line-height:2;font-size:14px}
 @media(max-width:600px){.condition-item{padding:20px 17px;gap:14px;border-radius:17px}.condition-number{flex-basis:35px;min-height:39px;font-size:15px}body:has(.terms) .condition-item p{font-size:14px}.conditions-confirm{padding:20px 17px}.conditions-confirm button{width:100%;font-size:12px;padding:15px 12px}}
