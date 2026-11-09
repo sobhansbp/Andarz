@@ -1,0 +1,1 @@
+ALTER TABLE events ADD COLUMN terms_json TEXT NOT NULL DEFAULT '';
