@@ -75,4 +75,14 @@ let adminPage=await (await get('/admin?step=conditions')).text();assert(adminPag
 await post('/admin/save-conditions',new URLSearchParams([['conditions_intro','بدون شرایط']]),400);assert.equal(JSON.parse(q.prepare('SELECT terms_json FROM events WHERE id=1').get().terms_json).items.length,2);
 // Single-exhibition boundary: historic exhibitions remain stored but cannot be publicly reserved.
 q.exec("INSERT INTO events(id,title,description,location,color,active,theme) VALUES(99,'Historic','','Old','#224b3d',1,'fatemieh')");assert.equal((await get('/event/99')).status,404);assert.equal(q.prepare('SELECT COUNT(*) n FROM events').get().n,2);
+// Enforce the five-person limit at both review and final submission, even with spare capacity.
+const quantityPage=await (await get('/event/1')).text();assert(/name="quantity"[^>]*max="5"/.test(quantityPage));
+q.exec('UPDATE slots SET capacity=10 WHERE id=2');
+const limitValues={...values,slot:'2',quantity:'5'};
+await post('/book',limitValues,200);
+for(const quantity of ['0','6','1.5'])for(const endpoint of ['/book','/book/confirm'])await post(endpoint,{...limitValues,quantity},400);
+const countBeforeLimit=q.prepare('SELECT COUNT(*) n FROM bookings').get().n;
+await post('/book/confirm',limitValues);
+assert.equal(q.prepare('SELECT COUNT(*) n FROM bookings').get().n,countBeforeLimit+1);
+assert.equal(q.prepare('SELECT quantity FROM bookings ORDER BY id DESC LIMIT 1').get().quantity,5);
 console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, capacity, fields, search, CSV, cancellation and check-in');
