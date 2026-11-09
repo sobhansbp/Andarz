@@ -81,3 +81,17 @@ body:has(.terms) .conditions-confirm label{margin-top:0;line-height:2;font-size:
  body:has(.ticket-card) .header,body:has(.ticket-card) footer,body:has(.ticket-card) button{display:none}
 }
 </style>`;
+
+export const sharedBackdropStyles=`<style>
+:root{--page-background-image:url('/static/bani-hashem.jpg')}
+html{min-height:100%;background:#101e17}
+body{position:relative;isolation:isolate;min-height:100svh;background:#101e17!important}
+body::before{content:'';position:fixed;inset:-24px;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(8,23,16,.45),rgba(8,23,16,.7)),var(--page-background-image) center/cover no-repeat!important;filter:blur(14px)!important;opacity:.72!important}
+body>.inner>h1{color:#f5ecda}body>.inner>.eyebrow{color:#deca9f}
+body>.inner>p,body>.inner>.admin-lead>p,body>.inner>.admin-actions,body>.inner>.admin-search>a{color:#e8dfc9}
+body>.inner>a{color:#dfc58e}
+body>.inner>form.narrow{color:#f2eddf;padding:25px;background:rgba(40,51,37,.96);border:1px solid #9d885b;border-radius:18px}
+body:has(.hero)::before{display:none}
+body:has(.hero) .hero{background-image:linear-gradient(90deg,rgba(9,17,13,.88),rgba(9,17,13,.26) 70%),var(--page-background-image)}
+@media print{html,body{background:#fff!important}body::before{display:none!important}body>.inner>h1,body>.inner>.eyebrow,body>.inner>p,body>.inner>.admin-actions{color:#243c2b}}
+</style>`;
