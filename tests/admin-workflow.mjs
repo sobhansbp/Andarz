@@ -107,4 +107,37 @@ await post('/admin/set-slot-capacity',{id:'2',capacity:'5'},409);assert.equal(q.
 const extraBooking=q.prepare('SELECT id FROM bookings ORDER BY id DESC LIMIT 1').get().id;
 await post('/admin/cancel',{id:extraBooking});await post('/admin/set-slot-capacity',{id:'2',capacity:'5'});
 assert.equal(q.prepare('SELECT capacity FROM slots WHERE id=2').get().capacity,5);assert.equal(q.prepare('SELECT COUNT(*) n FROM booking_answers').get().n,answerCount);
-console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, capacity changes and booking limits, fields, search, CSV, cancellation and check-in');
+// Fetch clients receive field errors instead of a separate HTML error page.
+async function postInline(path,data,expected=200){const r=await worker.fetch(new Request('https://example.com'+path,{method:'POST',headers:{Origin:'https://example.com',Cookie:cookie,Accept:'application/json','CF-Connecting-IP':'192.0.2.2'},body:new URLSearchParams(data)}),env);assert.equal(r.status,expected,path);assert(r.headers.get('Content-Type').includes('application/json'));assert.equal(r.headers.get('Cache-Control'),'no-store');return r.json()}
+let inlineBad=await postInline('/book',{...limitValues,name:'',phone:'bad',quantity:'0'},400);assert(inlineBad.errors.name);assert(inlineBad.errors.phone);assert(inlineBad.errors.quantity);
+let inlineFull=await postInline('/book',limitValues,409);assert(inlineFull.errors.quantity);assert.equal(inlineFull.availability[0].remaining,0);
+const inlineAdmin=await postInline('/admin/set-slot-capacity',{id:'2',capacity:'10'});assert.equal(inlineAdmin.redirect,'/admin/schedule?saved=1#slot-2');
+await post('/admin/toggle-field',{id:'1'});
+const invalidExtra=await postInline('/book',{...limitValues,field_1:'1111111111'},400);assert(invalidExtra.errors.field_1);
+const beforeInlineCount=q.prepare('SELECT COUNT(*) n FROM bookings').get().n;
+const reviewInline=await postInline('/book',limitValues);assert.equal(reviewInline.ok,true);assert(reviewInline.review.includes('id="reservation-confirm"'));assert(reviewInline.review.includes('01132311119'));assert.equal(q.prepare('SELECT COUNT(*) n FROM bookings').get().n,beforeInlineCount);
+await postInline('/admin/set-slot-capacity',{id:'2',capacity:'5'});
+const changedInline=await postInline('/book/confirm',limitValues,409);assert(changedInline.errors.quantity);assert.equal(changedInline.availability[0].remaining,0);assert.equal(q.prepare('SELECT COUNT(*) n FROM bookings').get().n,beforeInlineCount);
+await postInline('/admin/set-slot-capacity',{id:'2',capacity:'10'});
+const originalInlineBatch=DB.batch;DB.batch=async statements=>{q.exec("INSERT INTO bookings(slot_id,name,phone,quantity,code,status) VALUES(2,'Concurrent test','09000000001',1,'EEFF00112233','active')");return originalInlineBatch.call(DB,statements)};
+try{const race=await postInline('/book/confirm',limitValues,409);assert(race.errors.quantity);assert.equal(race.availability[0].remaining,4)}finally{DB.batch=originalInlineBatch}
+await postInline('/admin/set-slot-capacity',{id:'2',capacity:'11'});
+const finalInline=await postInline('/book/confirm',limitValues);assert.equal(finalInline.ok,true);assert(/^\/ticket\/[A-F0-9]{12}$/.test(finalInline.redirect));assert.equal(q.prepare("SELECT COUNT(*) n FROM bookings WHERE slot_id=2 AND status='active'").get().n,3);
+const adminInlineConflict=await postInline('/admin/set-slot-capacity',{id:'2',capacity:'10'},409);assert(adminInlineConflict.errors.capacity);
+const noAdminInline=await worker.fetch(new Request('https://example.com/admin/set-slot-capacity',{method:'POST',headers:{Accept:'application/json'},body:new URLSearchParams({id:'2',capacity:'99'})}),env);assert.equal(noAdminInline.status,401);assert((await noAdminInline.json()).errors._form);
+// Admin can independently require or relax base and custom registration fields.
+const fieldSettingsPage=await (await get('/admin?step=fields')).text();assert(fieldSettingsPage.includes('/admin/set-base-field-required'));assert(fieldSettingsPage.includes('/admin/set-field-required'));
+await postInline('/admin/set-base-field-required',{field:'slot',required:'0'},400);
+for(const field of ['name','phone','quantity'])await postInline('/admin/set-base-field-required',{field,required:'0'});
+const optionalForm=await (await get('/event/1')).text();for(const field of ['name','phone','quantity'])assert(!new RegExp('<input[^>]*name="'+field+'"[^>]*required').test(optionalForm));
+const optionalValues={...values,slot:'3',name:'',phone:'',quantity:''};
+const optionalReview=await postInline('/book',optionalValues);assert(optionalReview.review.includes('name="quantity" value="1"'));assert(optionalReview.review.includes('وارد نشده'));
+const optionalFinal=await postInline('/book/confirm',optionalValues);assert(optionalFinal.redirect);
+const anonymousBooking=q.prepare('SELECT * FROM bookings ORDER BY id DESC LIMIT 1').get();assert.equal(anonymousBooking.quantity,1);assert.equal(anonymousBooking.name,'');assert.equal(anonymousBooking.phone,'');assert((await (await get(optionalFinal.redirect)).text()).includes('بازدیدکننده'));
+assert((await postInline('/book',{...optionalValues,phone:'invalid'},400)).errors.phone);
+assert((await postInline('/book',{...optionalValues,quantity:'6'},400)).errors.quantity);
+assert((await postInline('/book',{...optionalValues,field_1:''},400)).errors.field_1);
+await postInline('/admin/set-field-required',{id:'1',required:'0'});await postInline('/book',{...optionalValues,field_1:''});await postInline('/admin/set-field-required',{id:'1',required:'1'});
+for(const field of ['name','phone','quantity'])await postInline('/admin/set-base-field-required',{field,required:'1'});
+const requiredAgain=await postInline('/book',optionalValues,400);for(const field of ['name','phone','quantity'])assert(requiredAgain.errors[field]);
+console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, configurable required fields, inline field errors, live capacity changes and booking limits, fields, search, CSV, cancellation and check-in');
