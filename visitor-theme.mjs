@@ -1,7 +1,7 @@
 export const visitorTheme=`<style>
 /* A continuous, muted palette through conditions, booking, review and ticket. */
 body:has(:is(.terms,#reserve,.review-card,.ticket-card)){
- --visitor-surface:rgba(37,45,33,.96);--visitor-inset:#1d281e;--visitor-line:rgba(191,168,110,.4);--visitor-text:#f2eddf;--visitor-muted:#c0c7b3;--visitor-gold:#d7bf87;
+ --visitor-surface:rgba(48,58,43,.96);--visitor-inset:#263223;--visitor-line:rgba(207,181,119,.46);--visitor-text:#f2eddf;--visitor-muted:#ccd1be;--visitor-gold:#d7bf87;
  background-color:#101911;color:var(--visitor-text)
 }
 body:has(:is(.review-card,.ticket-card)){
@@ -38,26 +38,26 @@ body:has(#reserve) #reserve .scroll-button:hover{background:#35402d}
 body:has(#reserve) #reserve .date-scroll,body:has(#reserve) #reserve .slots-grid,body:has(#reserve) #reserve .reservation-fields-scroll{scrollbar-color:#9d8b5d #202b1e}
 body:has(#reserve) #reserve .date-scroll::-webkit-scrollbar-thumb,body:has(#reserve) #reserve .slots-grid::-webkit-scrollbar-thumb{background:#9d8b5d}
 body:has(#reserve) #reserve .date-scroll::-webkit-scrollbar-track,body:has(#reserve) #reserve .slots-grid::-webkit-scrollbar-track{background:#202b1e}
-body:has(#reserve) #reserve .date-chip{background:#2c3828;border:1px solid #6b7958;color:var(--visitor-text);box-shadow:none}
+body:has(#reserve) #reserve .date-chip{background:#3a4931;border:1px solid #829068;color:var(--visitor-text);box-shadow:none}
 body:has(#reserve) #reserve .date-chip small{color:var(--visitor-muted)}
-body:has(#reserve) #reserve .date-chip.selected{background:#445137;border:1px solid #cfb674;color:#fff4d6;box-shadow:0 3px 0 #746440}
+body:has(#reserve) #reserve .date-chip.selected{background:#52613e;border:1px solid #dcc58d;color:#fff4d6;box-shadow:0 3px 0 #746440}
 body:has(#reserve) #reserve .date-chip.selected small{color:#e7dfbf}
-body:has(#reserve) #reserve .slot-card{background:#2c3828;border:1px solid #6b7958;color:var(--visitor-text);box-shadow:none}
+body:has(#reserve) #reserve .slot-card{background:#3a4931;border:1px solid #829068;color:var(--visitor-text);box-shadow:none}
 body:has(#reserve) #reserve .slot-time{color:var(--visitor-text)}
 body:has(#reserve) #reserve .slot-time i{color:var(--visitor-muted)}
 body:has(#reserve) #reserve .availability{color:#c3ddae}
 body:has(#reserve) #reserve .availability b{background:#a3c087}
 body:has(#reserve) #reserve .slot-card input{accent-color:#d1b573}
-body:has(#reserve) #reserve .slot-card:has(input:checked){background:#3c4d33;border:2px solid #c5ad70;box-shadow:0 3px 0 #70603c}
+body:has(#reserve) #reserve .slot-card:has(input:checked){background:#4e603d;border:2px solid #d2bc85;box-shadow:0 3px 0 #70603c}
 body:has(#reserve) #reserve .capacity-track{background:#43513b}
 body:has(#reserve) #reserve .capacity-track span{background:#a3be85}
-body:has(#reserve) #reserve .slot-card.full{background:#1d241d;border-color:#46513f;opacity:1}
+body:has(#reserve) #reserve .slot-card.full{background:#293226;border-color:#68725a;opacity:1}
 body:has(#reserve) #reserve .slot-card.full .slot-time,body:has(#reserve) #reserve .slot-card.full .availability{color:#b8c0ac}
 body:has(#reserve) #reserve .slot-card.full .availability b{background:#a0aa91}
 body:has(#reserve) #reserve .reservation-fields>label{color:var(--visitor-text)}
 body:has(#reserve) #reserve .reservation-fields label>small{color:var(--visitor-muted)}
 body:has(#reserve) #reserve .reservation-fields input,body:has(#reserve) #reserve .reservation-fields select{
- background:#172318;color:var(--visitor-text);border:1px solid #687653;caret-color:#eed6a0;color-scheme:dark
+ background:#263223;color:var(--visitor-text);border:1px solid #81916a;caret-color:#eed6a0;color-scheme:dark
 }
 body:has(#reserve) #reserve .reservation-fields input::placeholder{color:#b8c2ac;opacity:1}
 body:has(#reserve) #reserve .reservation-fields input:focus,body:has(#reserve) #reserve .reservation-fields select:focus{outline:2px solid #c7af71;border-color:#c7af71}
@@ -67,10 +67,10 @@ body:has(.terms) .terms{background:transparent;border:0;box-shadow:none;backdrop
 body:has(.terms) .terms>h2{margin-bottom:22px}
 body:has(.terms) .conditions-intro{color:var(--visitor-gold);font-size:16px;line-height:2;margin-bottom:25px}
 .conditions-list{list-style:none;display:grid;gap:16px;margin:0;padding:0;counter-reset:none}
-.condition-item{display:flex;align-items:center;gap:20px;padding:24px;background:rgba(37,45,33,.94);border:1px solid var(--visitor-line);border-radius:20px;backdrop-filter:blur(8px);min-width:0}
+.condition-item{display:flex;align-items:center;gap:20px;padding:24px;background:var(--visitor-surface);border:1px solid var(--visitor-line);border-radius:20px;backdrop-filter:blur(8px);min-width:0}
 body:has(.terms) .condition-item p{margin:0;color:var(--visitor-text);white-space:pre-wrap;line-height:2.2;font-size:15px;overflow-wrap:anywhere}
 .condition-number{display:grid;place-items:center;flex:0 0 44px;min-height:46px;border:1px solid #a18a53;background:#65533135;border-radius:12px;color:#ead4a0;font-weight:700;font-size:17px}
-.conditions-confirm{margin-top:24px;background:rgba(37,45,33,.94);padding:22px 26px;border:1px solid var(--visitor-line);border-radius:18px}
+.conditions-confirm{margin-top:24px;background:var(--visitor-surface);padding:22px 26px;border:1px solid var(--visitor-line);border-radius:18px}
 body:has(.terms) .conditions-confirm label{margin-top:0;line-height:2;font-size:14px}
 @media(max-width:600px){.condition-item{padding:20px 17px;gap:14px;border-radius:17px}.condition-number{flex-basis:35px;min-height:39px;font-size:15px}body:has(.terms) .condition-item p{font-size:14px}.conditions-confirm{padding:20px 17px}.conditions-confirm button{width:100%;font-size:12px;padding:15px 12px}}
 @media print{
