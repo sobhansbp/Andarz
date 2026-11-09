@@ -54,6 +54,8 @@ await post('/admin/set-field-required',{id:'1',required:'1'});
 await post('/book',{...values,field_1:''},400);
 await post('/book',values,200);await post('/book/confirm',values);await post('/book/confirm',values,409);
 let b=q.prepare('SELECT * FROM bookings').get();assert(b.code);
+let ticketResponse=await get('/ticket/'+b.code);assert.equal(ticketResponse.status,200);assert.equal(ticketResponse.headers.get('Cache-Control'),'no-store');let ticketMarkup=await ticketResponse.text();assert(ticketMarkup.includes('نمایش میدانی کوچه‌های بنی‌هاشم'));assert(ticketMarkup.includes(b.code));assert(ticketMarkup.includes('بازدیدکننده تست'));assert(ticketMarkup.includes('۲ بلیت'));assert(ticketMarkup.includes('ticket-skin.webp'));let ticketImage=await get('/static/ticket-skin.webp');assert.equal(ticketImage.status,200);assert.equal(ticketImage.headers.get('Content-Type'),'image/webp');assert((await ticketImage.arrayBuffer()).byteLength>1000);
+
 await post('/admin/edit-slot',{id:'1',date:'1405/09/10',start:'16:00',end:'17:00',capacity:'1',active:'1'},400);
 let bookings=await (await get('/admin/bookings?q='+encodeURIComponent('بازدیدکننده'))).text();assert(bookings.includes(b.code));assert(!bookings.includes('action="/admin/save-info"'));
 let detail=await (await get('/admin/booking/'+b.id)).text();assert(detail.includes('0013545981'));
