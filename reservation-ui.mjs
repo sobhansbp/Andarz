@@ -75,7 +75,7 @@ export const inlineErrorStyles=`
 [aria-invalid=true]:not([type=radio]):not([type=hidden]){border-color:#c98970!important;outline:2px solid #c9897044;outline-offset:1px}
 .inline-form-error{margin:0 0 16px;flex-basis:100%}.slot-field-error{margin-top:12px}.quantity-availability{display:block;font-size:11px;font-weight:400;line-height:1.8}
 .review-card .review-details{display:grid;gap:12px;margin:22px 0}.review-entry{padding:12px 16px;border:1px solid #8d916344;border-radius:12px}.review-entry dt{color:#d9c28b;font-size:12px;margin-bottom:5px}.review-entry dd{margin:0;line-height:1.9;overflow-wrap:anywhere}.review-actions{display:flex;gap:12px;flex-wrap:wrap}.review-card .review-intro{line-height:2}
-.reservation-support{font-size:20px!important;font-weight:500;line-height:2!important;text-align:center;margin:18px 0 0!important;color:inherit!important}.reservation-support a{display:inline-block;color:inherit;text-decoration:underline;text-underline-offset:4px;white-space:nowrap;font-weight:700}.reservation-support a:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+.reservation-support{font-size:17px!important;font-weight:500;line-height:2!important;text-align:center;margin:18px 0 0!important;color:inherit!important}.reservation-support a{display:inline-block;color:inherit;text-decoration:underline;text-underline-offset:4px;white-space:nowrap;font-weight:700}.reservation-support a:focus-visible{outline:2px solid currentColor;outline-offset:4px}
 `;
 
 // This self-contained validator is used by the Worker and serialized into the browser.
