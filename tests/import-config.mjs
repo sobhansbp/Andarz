@@ -20,7 +20,7 @@ db.prepare("INSERT INTO slots VALUES(999,?,'2026-12-01','10:00','11:00',10,1)").
 db.prepare("INSERT INTO event_fields VALUES(999,?,'old field',1,'text','',1)").run(id);
 importConfiguration(db,config);importConfiguration(db,config);
 assert.equal(db.prepare('SELECT COUNT(*) n FROM slots').get().n,34);
-assert.equal(db.prepare('SELECT COUNT(*) n FROM event_fields').get().n,3);
+assert.equal(db.prepare('SELECT COUNT(*) n FROM event_fields').get().n,config.fields.length+1);
 assert.equal(db.prepare('SELECT active FROM slots WHERE id=999').get().active,0);
 assert.equal(db.prepare('SELECT enabled FROM event_fields WHERE id=999').get().enabled,0);
 assert.equal(db.prepare('SELECT slot_id FROM bookings WHERE id=1').get().slot_id,sid);

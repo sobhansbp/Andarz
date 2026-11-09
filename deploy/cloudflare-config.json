@@ -260,6 +260,13 @@
       "kind": "text",
       "options": "",
       "enabled": 0
+    },
+    {
+      "label": "کودک زیر ۹ سال به همراه دارم",
+      "required": 1,
+      "kind": "select",
+      "options": "بله\nخیر",
+      "enabled": 1
     }
   ]
 }

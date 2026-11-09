@@ -61,6 +61,7 @@ echo 'Testing the candidate version...'
 node --check "$stage/server.mjs"
 node --check "$stage/worker.js"
 env -u WORKER_FILE node "$stage/tests/admin-workflow.mjs"
+node "$stage/tests/migrate-child-question.mjs"
 
 echo 'Stopping the app and backing up the database...'
 install -d -m 700 /root/andarzgoo-backups

@@ -140,4 +140,13 @@ assert((await postInline('/book',{...optionalValues,field_1:''},400)).errors.fie
 await postInline('/admin/set-field-required',{id:'1',required:'0'});await postInline('/book',{...optionalValues,field_1:''});await postInline('/admin/set-field-required',{id:'1',required:'1'});
 for(const field of ['name','phone','quantity'])await postInline('/admin/set-base-field-required',{field,required:'1'});
 const requiredAgain=await postInline('/book',optionalValues,400);for(const field of ['name','phone','quantity'])assert(requiredAgain.errors[field]);
-console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, configurable required fields, inline field errors, live capacity changes and booking limits, fields, search, CSV, cancellation and check-in');
+// The child-companion question uses two unselected radio choices and persists either answer.
+await postInline('/admin/add-field',{label:'کودک زیر ۹ سال به همراه دارم',kind:'select',required:'1',options:'بله\nخیر'});
+const childField=q.prepare("SELECT id FROM event_fields WHERE label='کودک زیر ۹ سال به همراه دارم'").get().id,childKey='field_'+childField;
+const childForm=await (await get('/event/1')).text();assert(childForm.includes('class="binary-field"'));assert.equal((childForm.match(new RegExp('type="radio" name="'+childKey+'"','g'))||[]).length,2);
+const childValues={...values,slot:'4',quantity:'1'};
+assert((await postInline('/book',childValues,400)).errors[childKey]);assert((await postInline('/book',{...childValues,[childKey]:'maybe'},400)).errors[childKey]);
+for(const answer of ['بله','خیر']){const payload={...childValues,[childKey]:answer};const review=await postInline('/book',payload);assert(review.review.includes('کودک زیر ۹ سال به همراه دارم'));assert(review.review.includes(answer));await postInline('/book/confirm',payload);assert.equal(q.prepare('SELECT value FROM booking_answers WHERE field_id=? ORDER BY id DESC LIMIT 1').get(childField).value,answer)}
+const childCSV=await (await get('/admin/export')).text();assert(childCSV.includes('کودک زیر ۹ سال به همراه دارم: بله'));assert(childCSV.includes('کودک زیر ۹ سال به همراه دارم: خیر'));
+await postInline('/admin/set-field-required',{id:String(childField),required:'0'});await postInline('/book',{...values,slot:'3',quantity:'1'});await postInline('/admin/set-field-required',{id:String(childField),required:'1'});
+console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, child-companion answers, configurable required fields, inline field errors, live capacity changes and booking limits, fields, search, CSV, cancellation and check-in');

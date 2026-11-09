@@ -60,8 +60,21 @@ body:has(#reserve) .inner{width:100%;min-width:0;max-width:1160px}
  #reserve .scroll-controls small{font-size:10px}
  #reserve .reservation-fields-scroll{max-height:58svh}
 }
+
+#reserve .binary-field{min-width:0;border:0;padding:0;margin:0;color:var(--visitor-text,#213f2d)}
+#reserve .binary-field legend{font-size:13px;line-height:1.9;padding:0;margin-bottom:10px;font-weight:700}
+#reserve .binary-field legend small{display:block;font-size:11px;font-weight:400;color:var(--visitor-muted,#4f6655);margin-top:5px}
+#reserve .binary-options{display:flex;gap:12px}
+#reserve .binary-options .binary-option{display:flex;align-items:center;justify-content:center;gap:10px;flex:1;min-height:50px;padding:12px;border:1px solid var(--visitor-line,#b9cbb0);border-radius:12px;background:var(--visitor-surface,#fff);color:inherit;cursor:pointer;font-size:14px}
+#reserve .binary-options .binary-option:has(input:checked){background:#695a37;border-color:#d8bf83;color:#fff1cc;box-shadow:0 0 0 1px #d8bf8344}
+#reserve .binary-option input[type=radio]{width:18px;height:18px;min-width:18px;padding:0;margin:0;accent-color:#d5bc80}
 @media(prefers-reduced-motion:reduce){#reserve *{scroll-behavior:auto!important;transition:none!important}}
 `;
+export function renderReservationField(field,esc){
+ const options=String(field.options||'').split('\n').filter(Boolean),required=field.required?'required':'';
+ if(field.kind==='select'&&options.length===2&&options.includes('بله')&&options.includes('خیر'))return `<fieldset class="binary-field"><legend>${esc(field.label)} <small>${field.required?'اجباری':'اختیاری'}</small></legend><div class="binary-options">${options.map(option=>`<label class="binary-option"><input type="radio" name="field_${field.id}" value="${esc(option)}" data-kind="select" ${required}><span>${esc(option)}</span></label>`).join('')}</div></fieldset>`;
+ return `<label>${esc(field.label)} <small>${field.required?'اجباری':'اختیاری'}</small>${field.kind==='select'?`<select name="field_${field.id}" data-kind="select" ${required}><option value="">انتخاب کنید</option>${options.map(option=>`<option value="${esc(option)}">${esc(option)}</option>`).join('')}</select>`:`<input name="field_${field.id}" data-kind="${esc(field.kind)}" type="text" ${field.kind==='date'?'placeholder="۱۴۰۵/۰۸/۱۸" inputmode="numeric"':''} maxlength="200" ${required}>`}</label>`;
+}
 export async function registrationRequirements(db){
  const required={name:true,phone:true,quantity:true};
  const rows=(await db.prepare("SELECT key,value FROM app_settings WHERE key IN ('registration_required_name','registration_required_phone','registration_required_quantity')").all()).results;
@@ -113,7 +126,7 @@ function inlineFormTools(form,scope=form){
   const el=document.createElement('p');el.className=name==='_form'?'inline-form-error':'field-error';el.dataset.inlineError=name;el.hidden=true;el.setAttribute('aria-live','polite');el.id='form-error-'+Math.random().toString(36).slice(2);
   const row=[...scope.querySelectorAll('[data-review-field]')].find(e=>e.dataset.reviewField===name);
   const input=controls(name)[0];const group=name==='slot'?scope.querySelector('#reservation-times'):null;
-  if(row)row.append(el);else if(group){el.classList.add('slot-field-error');group.after(el)}else if(input?.closest('label'))input.closest('label').append(el);else if(name==='_form'&&form.querySelector('.reservation-submit'))form.querySelector('.reservation-submit').prepend(el);else scope.prepend(el);
+  if(row)row.append(el);else if(group){el.classList.add('slot-field-error');group.after(el)}else if(input?.closest('.binary-field'))input.closest('.binary-field').append(el);else if(input?.closest('label'))input.closest('label').append(el);else if(name==='_form'&&form.querySelector('.reservation-submit'))form.querySelector('.reservation-submit').prepend(el);else scope.prepend(el);
   for(const field of controls(name)){const descriptions=(field.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean);field.setAttribute('aria-describedby',[...descriptions,el.id].join(' '))}
   boxes.set(name,el);return el;
  }
@@ -160,15 +173,17 @@ function initializeReservation(tools,validate){
  function quantityHint(){if(!root)return;const input=root.querySelector('[name=slot]:checked');const remaining=input?Number(input.closest('.slot-card').dataset.remaining):null;quantity.max=remaining===null?'5':String(Math.min(5,Math.max(1,remaining)));quantityMessage.textContent=remaining===null?'حداکثر ۵ نفر در هر رزرو.':'ظرفیت باقی‌مانده این سانس: '+remaining.toLocaleString('fa-IR')+' نفر؛ حداکثر هر رزرو ۵ نفر.';}
  function validateInput(input){
   const kind=input.name==='name'?'person':input.name==='phone'?'phone':input.name==='quantity'?'quantity':input.dataset.kind||'text';
-  let message=validate({value:input.value,kind,required:input.required,maxLength:input.name==='name'?100:200,options:input.tagName==='SELECT'?[...input.options].map(o=>o.value).filter(Boolean):[]});
+  const group=input.type==='radio'?[...root.querySelectorAll('input[type=radio]')].filter(el=>el.name===input.name):null;
+  let message=validate({value:group?group.find(el=>el.checked)?.value||'':input.value,kind,required:group?group.some(el=>el.required):input.required,maxLength:input.name==='name'?100:200,options:group?group.map(el=>el.value):input.tagName==='SELECT'?[...input.options].map(o=>o.value).filter(Boolean):[]});
   if(input.validity.badInput)message='عدد معتبر وارد کنید.';
   if(!message&&input.name==='quantity'){const chosen=root.querySelector('[name=slot]:checked');if(chosen){const remaining=Number(chosen.closest('.slot-card').dataset.remaining);if(Number(digits(input.value)||(input.required?'0':'1'))>remaining)message='برای این سانس فقط '+remaining.toLocaleString('fa-IR')+' نفر ظرفیت باقی مانده است.';}}
   rootTools.set(input.name,message);return message;
  }
- const fields=[...root.querySelectorAll('input:not([type=hidden]):not([type=radio]),select,textarea')];
+ const fields=[...root.querySelectorAll('input:not([type=hidden]),select,textarea')].filter(input=>input.name!=='slot'&&(input.type!=='radio'||[...root.querySelectorAll('input[type=radio]')].find(el=>el.name===input.name)===input));
  function selectDate(day){dates.forEach(button=>{const selected=button.dataset.date===day;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected))});slots.forEach(slot=>{slot.hidden=slot.dataset.day!==day;if(slot.hidden)slot.querySelector('input').checked=false});if(timeTrack)timeTrack.scrollLeft=0;const date=dates.find(button=>button.dataset.date===day);if(announcement&&date)announcement.textContent='سانس‌های '+date.querySelector('span').textContent;rootTools.set('slot','');quantityHint();validateInput(quantity);}
  dates.forEach(button=>button.addEventListener('click',()=>selectDate(button.dataset.date)));if(dates.length)selectDate(dates[0].dataset.date);else quantityHint();
  for(const input of fields){input.addEventListener('input',()=>validateInput(input));input.addEventListener('change',()=>validateInput(input));input.addEventListener('blur',()=>validateInput(input))}
+ root.querySelectorAll('input[type=radio]:not([name=slot])').forEach(input=>input.addEventListener('change',()=>validateInput(input)));
  root.querySelectorAll('[name=slot]').forEach(input=>input.addEventListener('change',()=>{rootTools.set('slot','');quantityHint();validateInput(quantity)}));
  root.querySelectorAll('[data-scroll-target]').forEach(button=>button.addEventListener('click',()=>{const target=root.querySelector('#'+button.dataset.scrollTarget);if(target)target.scrollBy({left:Number(button.dataset.scrollDirection)*Math.max(180,target.clientWidth*.7),behavior:reduced?'auto':'smooth'})}));
  root.addEventListener('submit',event=>{
