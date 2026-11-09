@@ -1,7 +1,7 @@
 export const visitorTheme=`<style>
 /* A continuous, muted palette through conditions, booking, review and ticket. */
 body:has(:is(.terms,#reserve,.review-card,.ticket-card)){
- --visitor-surface:rgba(48,58,43,.96);--visitor-inset:#263223;--visitor-line:rgba(207,181,119,.46);--visitor-text:#f2eddf;--visitor-muted:#ccd1be;--visitor-gold:#d7bf87;
+ --visitor-surface:rgba(57,53,39,.96);--visitor-inset:#322e22;--visitor-line:rgba(210,181,112,.5);--visitor-text:#f2eddf;--visitor-muted:#d2cbb8;--visitor-gold:#d7bf87;
  background-color:#101911;color:var(--visitor-text)
 }
 body:has(:is(.review-card,.ticket-card)){
@@ -31,35 +31,35 @@ body:has(.ticket-card) .ticket-card strong{color:#ead6a7;background:#1e2b1f;bord
 body:has(.ticket-card) .ticket-kicker{color:var(--visitor-gold);font-weight:700}
 body:has(#reserve) #reserve .step-heading h2{color:var(--visitor-text)}
 body:has(#reserve) #reserve .step-heading p{color:var(--visitor-muted)}
-body:has(#reserve) #reserve .step-heading>span{background:#32382a;color:var(--visitor-gold);border:1px solid #746744}
+body:has(#reserve) #reserve .step-heading>span{background:#463d29;color:var(--visitor-gold);border:1px solid #746744}
 body:has(#reserve) #reserve .scroll-controls,body:has(#reserve) #reserve .scroll-controls small{color:var(--visitor-muted)}
-body:has(#reserve) #reserve .scroll-button{background:#273223;color:#e4d1a0;border:1px solid #80714a;box-shadow:0 2px 0 #10170f}
-body:has(#reserve) #reserve .scroll-button:hover{background:#35402d}
-body:has(#reserve) #reserve .date-scroll,body:has(#reserve) #reserve .slots-grid,body:has(#reserve) #reserve .reservation-fields-scroll{scrollbar-color:#9d8b5d #202b1e}
+body:has(#reserve) #reserve .scroll-button{background:#393225;color:#e4d1a0;border:1px solid #80714a;box-shadow:0 2px 0 #10170f}
+body:has(#reserve) #reserve .scroll-button:hover{background:#4a402c}
+body:has(#reserve) #reserve .date-scroll,body:has(#reserve) #reserve .slots-grid,body:has(#reserve) #reserve .reservation-fields-scroll{scrollbar-color:#b29a63 #2d281e}
 body:has(#reserve) #reserve .date-scroll::-webkit-scrollbar-thumb,body:has(#reserve) #reserve .slots-grid::-webkit-scrollbar-thumb{background:#9d8b5d}
-body:has(#reserve) #reserve .date-scroll::-webkit-scrollbar-track,body:has(#reserve) #reserve .slots-grid::-webkit-scrollbar-track{background:#202b1e}
-body:has(#reserve) #reserve .date-chip{background:#3a4931;border:1px solid #829068;color:var(--visitor-text);box-shadow:none}
+body:has(#reserve) #reserve .date-scroll::-webkit-scrollbar-track,body:has(#reserve) #reserve .slots-grid::-webkit-scrollbar-track{background:#2d281e}
+body:has(#reserve) #reserve .date-chip{background:#46412e;border:1px solid #94835d;color:var(--visitor-text);box-shadow:none}
 body:has(#reserve) #reserve .date-chip small{color:var(--visitor-muted)}
-body:has(#reserve) #reserve .date-chip.selected{background:#52613e;border:1px solid #dcc58d;color:#fff4d6;box-shadow:0 3px 0 #746440}
+body:has(#reserve) #reserve .date-chip.selected{background:#625438;border:1px solid #dfc78b;color:#fff4d6;box-shadow:0 3px 0 #746440}
 body:has(#reserve) #reserve .date-chip.selected small{color:#e7dfbf}
-body:has(#reserve) #reserve .slot-card{background:#3a4931;border:1px solid #829068;color:var(--visitor-text);box-shadow:none}
+body:has(#reserve) #reserve .slot-card{background:#46412e;border:1px solid #94835d;color:var(--visitor-text);box-shadow:none}
 body:has(#reserve) #reserve .slot-time{color:var(--visitor-text)}
 body:has(#reserve) #reserve .slot-time i{color:var(--visitor-muted)}
-body:has(#reserve) #reserve .availability{color:#c3ddae}
-body:has(#reserve) #reserve .availability b{background:#a3c087}
+body:has(#reserve) #reserve .availability{color:#ded0a8}
+body:has(#reserve) #reserve .availability b{background:#c8ad70}
 body:has(#reserve) #reserve .slot-card input{accent-color:#d1b573}
-body:has(#reserve) #reserve .slot-card:has(input:checked){background:#4e603d;border:2px solid #d2bc85;box-shadow:0 3px 0 #70603c}
-body:has(#reserve) #reserve .capacity-track{background:#43513b}
-body:has(#reserve) #reserve .capacity-track span{background:#a3be85}
-body:has(#reserve) #reserve .slot-card.full{background:#293226;border-color:#68725a;opacity:1}
-body:has(#reserve) #reserve .slot-card.full .slot-time,body:has(#reserve) #reserve .slot-card.full .availability{color:#b8c0ac}
+body:has(#reserve) #reserve .slot-card:has(input:checked){background:#625339;border:2px solid #dbc185;box-shadow:0 3px 0 #70603c}
+body:has(#reserve) #reserve .capacity-track{background:#5a5139}
+body:has(#reserve) #reserve .capacity-track span{background:#c8ad70}
+body:has(#reserve) #reserve .slot-card.full{background:#353125;border-color:#7e7258;opacity:1}
+body:has(#reserve) #reserve .slot-card.full .slot-time,body:has(#reserve) #reserve .slot-card.full .availability{color:#c6bda7}
 body:has(#reserve) #reserve .slot-card.full .availability b{background:#a0aa91}
 body:has(#reserve) #reserve .reservation-fields>label{color:var(--visitor-text)}
 body:has(#reserve) #reserve .reservation-fields label>small{color:var(--visitor-muted)}
 body:has(#reserve) #reserve .reservation-fields input,body:has(#reserve) #reserve .reservation-fields select{
- background:#263223;color:var(--visitor-text);border:1px solid #81916a;caret-color:#eed6a0;color-scheme:dark
+ background:#332f23;color:var(--visitor-text);border:1px solid #96835b;caret-color:#eed6a0;color-scheme:dark
 }
-body:has(#reserve) #reserve .reservation-fields input::placeholder{color:#b8c2ac;opacity:1}
+body:has(#reserve) #reserve .reservation-fields input::placeholder{color:#c6bca4;opacity:1}
 body:has(#reserve) #reserve .reservation-fields input:focus,body:has(#reserve) #reserve .reservation-fields select:focus{outline:2px solid #c7af71;border-color:#c7af71}
 body:has(#reserve) #reserve .reservation-submit{border-color:var(--visitor-line)}
 body:has(#reserve) #reserve .empty{background:#202c20;border-color:var(--visitor-line);color:var(--visitor-muted)}
