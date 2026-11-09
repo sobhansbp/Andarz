@@ -41,6 +41,13 @@ let home=await (await get('/')).text();assert(home.includes('/conditions/1'));as
 assert.equal((await get('/event/999')).status,404);
 let eventPage=await get('/event/1');assert.equal(eventPage.status,200);assert((await eventPage.text()).includes('کد ملی'));
 let values={name:'بازدیدکننده تست',phone:'09123456789',quantity:'2',slot:'1',event:'1',field_1:'0013545981'};
+await post('/book',{...values,field_1:''},400);
+await post('/admin/set-field-required',{id:'1',required:'0'});
+assert.equal(q.prepare('SELECT required FROM event_fields WHERE id=1').get().required,0);
+await post('/book',{...values,field_1:''},200);
+await post('/admin/set-field-required',{id:'1',required:'invalid'},400);
+await post('/admin/set-field-required',{id:'1',required:'1'});
+await post('/book',{...values,field_1:''},400);
 await post('/book',values,200);await post('/book/confirm',values);await post('/book/confirm',values,409);
 let b=q.prepare('SELECT * FROM bookings').get();assert(b.code);
 await post('/admin/edit-slot',{id:'1',date:'1405/09/10',start:'16:00',end:'17:00',capacity:'1',active:'1'},400);
