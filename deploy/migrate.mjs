@@ -12,6 +12,12 @@ try {
  INSERT OR IGNORE INTO app_settings(key,value) SELECT 'main_event_id',CAST(id AS TEXT) FROM events ORDER BY active DESC,CASE WHEN theme='fatemieh' THEN 0 ELSE 1 END,id DESC LIMIT 1;
  UPDATE events SET theme='fatemieh',color='#224b3d' WHERE id=(SELECT CAST(value AS INTEGER) FROM app_settings WHERE key='main_event_id');`);
  db.prepare("INSERT INTO event_fields(event_id,label,required,kind,options,enabled) SELECT e.id,?,1,'select',?,1 FROM events e JOIN app_settings a ON a.key='main_event_id' AND e.id=CAST(a.value AS INTEGER) WHERE NOT EXISTS(SELECT 1 FROM event_fields f WHERE f.event_id=e.id AND f.label=?)").run('کودک زیر ۹ سال به همراه دارم','بله\nخیر','کودک زیر ۹ سال به همراه دارم');
+ const mainEvent=db.prepare("SELECT e.id FROM events e JOIN app_settings a ON a.key='main_event_id' AND e.id=CAST(a.value AS INTEGER)").get();
+ const capacityUpgrade='capacity_upgrade_80_20261110';
+ if(mainEvent&&!db.prepare('SELECT 1 FROM app_settings WHERE key=?').get(capacityUpgrade)){
+  db.prepare('UPDATE slots SET capacity=80 WHERE event_id=? AND capacity<80').run(mainEvent.id);
+  db.prepare('INSERT INTO app_settings(key,value) VALUES(?,?)').run(capacityUpgrade,'80');
+ }
  db.exec('COMMIT');console.log('Database migration completed.');
 } catch (e) { db.exec('ROLLBACK'); console.error('Migration failed:',e.message);process.exitCode=1; }
 db.close();
