@@ -10,6 +10,7 @@ export function importConfiguration(db, config) {
   const keys = new Set();
   for (const s of config.slots) {
     const key = JSON.stringify([s.date,s.start,s.end]);
+    if (s.reserved_capacity!==undefined&&(!Number.isInteger(s.reserved_capacity)||s.reserved_capacity<0||s.reserved_capacity>s.capacity)) throw Error('Invalid reserved capacity.');
     if (keys.has(key) || !/^\d{4}-\d{2}-\d{2}$/.test(s.date) || !/^\d{2}:\d{2}$/.test(s.start) || !/^\d{2}:\d{2}$/.test(s.end) || s.start >= s.end || !Number.isInteger(s.capacity) || s.capacity < 1 || ![0,1].includes(s.active)) throw Error('Invalid or duplicate source session.');
     keys.add(key);
   }
@@ -31,14 +32,15 @@ export function importConfiguration(db, config) {
     // Sessions/fields omitted from the source are closed, never deleted.
     db.prepare('UPDATE slots SET active=0 WHERE event_id=?').run(id);
     for (const s of config.slots) {
-      const matches = db.prepare('SELECT id FROM slots WHERE event_id=? AND date=? AND start=? AND end=?').all(id,s.date,s.start,s.end);
+      const matches = db.prepare('SELECT id,reserved_capacity FROM slots WHERE event_id=? AND date=? AND start=? AND end=?').all(id,s.date,s.start,s.end);
       if (matches.length > 1) throw Error(`Duplicate local session: ${s.date} ${s.start}. Import rolled back.`);
       if (matches.length) {
         const sid = matches[0].id;
         const used = db.prepare("SELECT COALESCE(SUM(quantity),0) n FROM bookings WHERE slot_id=? AND status='active'").get(sid).n;
-        if (used > s.capacity) throw Error(`Capacity below existing bookings: ${s.date} ${s.start}. Import rolled back.`);
-        db.prepare('UPDATE slots SET capacity=?,active=? WHERE id=?').run(s.capacity,s.active,sid);
-      } else db.prepare('INSERT INTO slots(event_id,date,start,end,capacity,active) VALUES(?,?,?,?,?,?)').run(id,s.date,s.start,s.end,s.capacity,s.active);
+        const held=s.reserved_capacity??matches[0].reserved_capacity??0;
+        if (used+held > s.capacity) throw Error(`Capacity below existing bookings: ${s.date} ${s.start}. Import rolled back.`);
+        db.prepare('UPDATE slots SET capacity=?,active=?,reserved_capacity=? WHERE id=?').run(s.capacity,s.active,held,sid);
+      } else db.prepare('INSERT INTO slots(event_id,date,start,end,capacity,active,reserved_capacity) VALUES(?,?,?,?,?,?,?)').run(id,s.date,s.start,s.end,s.capacity,s.active,s.reserved_capacity??0);
     }
     db.prepare('UPDATE event_fields SET enabled=0 WHERE event_id=?').run(id);
     for (const f of config.fields) {

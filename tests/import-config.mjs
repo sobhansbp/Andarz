@@ -6,7 +6,7 @@ const config=JSON.parse(readFileSync(new URL('../deploy/cloudflare-config.json',
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE events(id INTEGER PRIMARY KEY,title TEXT,description TEXT,location TEXT,color TEXT,active INTEGER,image_url TEXT,theme TEXT,terms TEXT,terms_json TEXT);
 CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT);
-CREATE TABLE slots(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),date TEXT,start TEXT,end TEXT,capacity INTEGER,active INTEGER);
+CREATE TABLE slots(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),date TEXT,start TEXT,end TEXT,capacity INTEGER,active INTEGER,reserved_capacity INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE bookings(id INTEGER PRIMARY KEY,slot_id INTEGER REFERENCES slots(id),quantity INTEGER,status TEXT);
 CREATE TABLE event_fields(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),label TEXT,required INTEGER,kind TEXT,options TEXT,enabled INTEGER);
 CREATE TABLE booking_answers(id INTEGER PRIMARY KEY,booking_id INTEGER REFERENCES bookings(id),field_id INTEGER REFERENCES event_fields(id),value TEXT);`);
@@ -16,7 +16,7 @@ const sid=db.prepare('SELECT id FROM slots ORDER BY id LIMIT 1').get().id;
 const fid=db.prepare('SELECT id FROM event_fields ORDER BY id LIMIT 1').get().id;
 db.prepare('INSERT INTO bookings VALUES(1,?,3,\'active\')').run(sid);
 db.prepare("INSERT INTO booking_answers VALUES(1,1,?,'sample answer')").run(fid);
-db.prepare("INSERT INTO slots VALUES(999,?,'2026-12-01','10:00','11:00',10,1)").run(id);
+db.prepare("INSERT INTO slots(id,event_id,date,start,end,capacity,active) VALUES(999,?,'2026-12-01','10:00','11:00',10,1)").run(id);
 db.prepare("INSERT INTO event_fields VALUES(999,?,'old field',1,'text','',1)").run(id);
 importConfiguration(db,config);importConfiguration(db,config);
 assert.equal(db.prepare('SELECT COUNT(*) n FROM slots').get().n,34);
@@ -27,7 +27,7 @@ assert.equal(db.prepare('SELECT slot_id FROM bookings WHERE id=1').get().slot_id
 assert.equal(db.prepare('SELECT field_id FROM booking_answers WHERE id=1').get().field_id,fid);
 assert.equal(db.prepare('SELECT terms_json FROM events').get().terms_json,config.event.terms_json);
 const before=JSON.stringify(db.prepare('SELECT * FROM events').all())+JSON.stringify(db.prepare('SELECT * FROM slots').all());
-const bad=structuredClone(config);bad.event.title='must roll back';bad.slots[0].capacity=1;
+const bad=structuredClone(config);bad.event.title='must roll back';bad.slots[0].capacity=(bad.slots[0].reserved_capacity||0)+1;
 assert.throws(()=>importConfiguration(db,bad),/Capacity below/);
 assert.equal(JSON.stringify(db.prepare('SELECT * FROM events').all())+JSON.stringify(db.prepare('SELECT * FROM slots').all()),before);
 db.prepare('INSERT INTO slots(event_id,date,start,end,capacity,active) SELECT event_id,date,start,end,capacity,active FROM slots WHERE id=?').run(sid);

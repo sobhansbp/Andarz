@@ -18,7 +18,7 @@ const parsed=parseConditions('لطفاً به موارد زیر توجه داش�
 assert.equal(getConditions({terms:'شرط قدیمی'}).items[0],'شرط قدیمی');
 const q=new DatabaseSync(':memory:');q.exec(`PRAGMA foreign_keys=ON;
 CREATE TABLE events(id INTEGER PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL,location TEXT NOT NULL,color TEXT NOT NULL,active INTEGER DEFAULT 1,image_url TEXT DEFAULT '',theme TEXT DEFAULT 'default',terms TEXT DEFAULT '',terms_json TEXT DEFAULT '');
-CREATE TABLE slots(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),date TEXT,start TEXT,end TEXT,capacity INTEGER,active INTEGER DEFAULT 1);
+CREATE TABLE slots(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),date TEXT,start TEXT,end TEXT,capacity INTEGER,active INTEGER DEFAULT 1,reserved_capacity INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE bookings(id INTEGER PRIMARY KEY,slot_id INTEGER REFERENCES slots(id),name TEXT,phone TEXT,quantity INTEGER,code TEXT UNIQUE,created TEXT DEFAULT CURRENT_TIMESTAMP,status TEXT DEFAULT 'active',checked_in_at TEXT);
 CREATE TABLE event_fields(id INTEGER PRIMARY KEY,event_id INTEGER REFERENCES events(id),label TEXT,required INTEGER,kind TEXT DEFAULT 'text',options TEXT DEFAULT '',enabled INTEGER DEFAULT 1);
 CREATE TABLE booking_answers(id INTEGER PRIMARY KEY,booking_id INTEGER REFERENCES bookings(id),field_id INTEGER REFERENCES event_fields(id),label TEXT,value TEXT);
@@ -149,4 +149,27 @@ assert((await postInline('/book',childValues,400)).errors[childKey]);assert((awa
 for(const answer of ['بله','خیر']){const payload={...childValues,[childKey]:answer};const review=await postInline('/book',payload);assert(review.review.includes('کودک زیر ۹ سال به همراه دارم'));assert(review.review.includes(answer));await postInline('/book/confirm',payload);assert.equal(q.prepare('SELECT value FROM booking_answers WHERE field_id=? ORDER BY id DESC LIMIT 1').get(childField).value,answer)}
 const childCSV=await (await get('/admin/export')).text();assert(childCSV.includes('کودک زیر ۹ سال به همراه دارم: بله'));assert(childCSV.includes('کودک زیر ۹ سال به همراه دارم: خیر'));
 await postInline('/admin/set-field-required',{id:String(childField),required:'0'});await postInline('/book',{...values,slot:'3',quantity:'1'});await postInline('/admin/set-field-required',{id:String(childField),required:'1'});
-console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, child-companion answers, configurable required fields, inline field errors, live capacity changes and booking limits, fields, search, CSV, cancellation and check-in');
+// Held places reduce availability without creating fictitious registrations.
+q.exec("INSERT INTO slots(id,event_id,date,start,end,capacity,active) VALUES(800,1,'2026-12-02','10:00','11:00',80,1)");
+async function heldRequest(path,data,expected=200){const r=await worker.fetch(new Request('https://example.com'+path,{method:'POST',headers:{Origin:'https://example.com',Cookie:cookie,Accept:'application/json','CF-Connecting-IP':'192.0.2.3'},body:new URLSearchParams(data)}),env);assert.equal(r.status,expected,path);return r.json()}
+const heldCount=q.prepare('SELECT COUNT(*) n FROM bookings').get().n;
+await heldRequest('/admin/set-slot-reserved',{id:'800',reserved_capacity:'۳۰'});assert.equal(q.prepare('SELECT reserved_capacity FROM slots WHERE id=800').get().reserved_capacity,30);assert.equal(q.prepare('SELECT COUNT(*) n FROM bookings').get().n,heldCount);
+let heldPublic=await (await get('/event/1')).text();assert(heldPublic.includes('data-remaining="50"'));assert(heldPublic.includes('۵۰ نفر باقی‌مانده'));
+const heldValues={...values,slot:'800',quantity:'5',[childKey]:'خیر'};
+await heldRequest('/book',heldValues);await heldRequest('/book/confirm',heldValues);assert.equal(q.prepare('SELECT COUNT(*) n FROM bookings').get().n,heldCount+1);
+await heldRequest('/admin/set-slot-capacity',{id:'800',capacity:'34'},409);await heldRequest('/admin/set-slot-capacity',{id:'800',capacity:'35'});
+assert((await heldRequest('/book',{...heldValues,quantity:'1'},409)).errors.quantity);
+await heldRequest('/admin/edit-slot',{id:'800',date:'1405/09/11',start:'10:00',end:'11:00',capacity:'34',active:'1'},400);
+assert.equal(q.prepare('SELECT capacity FROM slots WHERE id=800').get().capacity,35);
+assert((await heldRequest('/admin/set-slot-reserved',{id:'800',reserved_capacity:'31'},409)).errors.reserved_capacity);
+for(const reserved_capacity of ['-1','1.5','bad','100001'])await heldRequest('/admin/set-slot-reserved',{id:'800',reserved_capacity},400);
+await heldRequest('/admin/set-slot-reserved',{id:'999',reserved_capacity:'1'},404);
+await heldRequest('/admin/set-slot-reserved',{id:'800',reserved_capacity:'25'});await heldRequest('/book/confirm',heldValues);const heldBooking=q.prepare('SELECT id FROM bookings ORDER BY id DESC LIMIT 1').get().id;
+await heldRequest('/admin/cancel',{id:heldBooking});assert.equal(q.prepare('SELECT reserved_capacity FROM slots WHERE id=800').get().reserved_capacity,25);
+await heldRequest('/admin/set-slot-capacity',{id:'800',capacity:'80'});await heldRequest('/admin/set-slot-reserved',{id:'800',reserved_capacity:'30'});
+const beforeHeldRace=q.prepare('SELECT COUNT(*) n FROM bookings').get().n;const heldBatch=DB.batch;DB.batch=async statements=>{q.exec('UPDATE slots SET reserved_capacity=72 WHERE id=800');return heldBatch.call(DB,statements)};
+try{const raced=await heldRequest('/book/confirm',heldValues,409);assert(raced.errors.quantity);assert.equal(raced.availability[0].remaining,3)}finally{DB.batch=heldBatch}
+assert.equal(q.prepare('SELECT COUNT(*) n FROM bookings').get().n,beforeHeldRace);
+await heldRequest('/admin/set-slot-reserved',{id:'800',reserved_capacity:'0'});assert.equal(q.prepare('SELECT reserved_capacity FROM slots WHERE id=800').get().reserved_capacity,0);assert.equal(q.prepare('SELECT capacity FROM slots WHERE id=800').get().capacity,80);
+const heldAdmin=await (await get('/admin/schedule')).text();assert(heldAdmin.includes('نگه‌داشته‌شده'));assert(heldAdmin.includes('/admin/set-slot-reserved'));
+console.log('PASS: Jalali conversion/calendar, setup wizard, single exhibition, schedule deduplication, child-companion answers, configurable required fields, inline field errors, held places, live capacity changes and booking limits, fields, search, CSV, cancellation and check-in');
